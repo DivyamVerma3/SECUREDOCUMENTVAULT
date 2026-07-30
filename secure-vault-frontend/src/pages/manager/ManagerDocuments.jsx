@@ -1,0 +1,494 @@
+import React, { useEffect, useState } from "react";
+import API from "../../services/api";
+
+
+function ManagerDocuments() {
+
+
+    const [documents,setDocuments] = useState([]);
+
+    const [keyword,setKeyword] = useState("");
+
+    const [loading,setLoading] = useState(false);
+
+
+
+
+
+    useEffect(()=>{
+
+        loadDocuments();
+
+    },[]);
+
+
+
+
+
+
+
+
+    // ===========================
+    // Load Documents
+    // ===========================
+
+    const loadDocuments = async()=>{
+
+
+        try{
+
+
+            setLoading(true);
+
+
+            const response =
+                await API.get(
+                "/api/manager/documents"
+                );
+
+
+            setDocuments(
+                response.data
+            );
+
+
+
+        }catch(error){
+
+
+            console.log(
+                "Document loading error",
+                error
+            );
+
+
+        }
+        finally{
+
+
+            setLoading(false);
+
+
+        }
+
+
+    };
+
+
+
+
+
+
+
+
+
+    // ===========================
+    // Search
+    // ===========================
+
+    const searchDocuments = async()=>{
+
+
+        try{
+
+
+            if(keyword.trim()===""){
+
+                loadDocuments();
+
+                return;
+
+            }
+
+
+
+            const response =
+                await API.get(
+                `/api/manager/documents/search?keyword=${keyword}`
+                );
+
+
+
+            setDocuments(
+                response.data
+            );
+
+
+
+        }catch(error){
+
+
+            console.log(
+                "Search error",
+                error
+            );
+
+
+        }
+
+
+    };
+
+
+
+
+
+
+
+
+
+    // ===========================
+    // Delete Document
+    // ===========================
+
+    const deleteDocument = async (id) => {
+
+    if (!window.confirm("Delete this document?")) {
+
+        return;
+
+    }
+
+    try {
+
+        await API.delete(
+            `/api/manager/documents/${id}`
+        );
+
+        // Remove immediately from UI
+        setDocuments(prev =>
+            prev.filter(doc => doc.documentId !== id)
+        );
+
+        alert("Document Deleted");
+
+        // Reload from server to keep UI in sync
+        loadDocuments();
+
+    } catch (error) {
+
+        alert(
+            error.response?.data ||
+            "Delete failed"
+        );
+
+    }
+
+};
+
+
+
+
+
+
+
+
+
+    return (
+
+        <div className="container-fluid mt-4">
+
+
+            <h3>
+                Department Documents
+            </h3>
+
+
+
+
+
+
+            <div className="row mt-3 mb-3">
+
+
+                <div className="col-md-6">
+
+
+                    <input
+
+                    className="form-control"
+
+                    placeholder="Search document"
+
+                    value={keyword}
+
+                    onChange={(e)=>
+                        setKeyword(
+                            e.target.value
+                        )
+                    }
+
+                    />
+
+
+                </div>
+
+
+
+
+                <div className="col-md-2">
+
+
+                    <button
+
+                    className="btn btn-primary"
+
+                    onClick={searchDocuments}
+
+                    >
+
+                        Search
+
+                    </button>
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+
+
+
+
+
+            {
+
+            loading ?
+
+
+            <div>
+
+                Loading Documents...
+
+            </div>
+
+
+
+            :
+
+
+
+            <table className="table table-bordered">
+
+
+                <thead className="table-dark">
+
+
+                    <tr>
+
+
+                        <th>
+                            File Name
+                        </th>
+
+
+                        <th>
+                            Uploaded By
+                        </th>
+
+
+                        <th>
+                            Upload Date
+                        </th>
+
+
+                        <th>
+                            Status
+                        </th>
+
+
+                        <th>
+                            Action
+                        </th>
+
+
+                    </tr>
+
+
+                </thead>
+
+
+
+
+
+
+
+                <tbody>
+
+
+                {
+
+
+                documents.length === 0 ?
+
+
+                <tr>
+
+
+                    <td 
+                    colSpan="5"
+                    className="text-center">
+
+                        No Documents Found
+
+                    </td>
+
+
+                </tr>
+
+
+
+                :
+
+
+
+                documents.map(doc=>(
+
+
+                    <tr key={doc.documentId}>
+
+
+                        <td>
+
+                            {doc.fileName}
+
+                        </td>
+
+
+
+
+
+                        <td>
+
+                            {
+                            doc.user?.username ||
+                            "-"
+                            }
+
+                        </td>
+
+
+
+
+
+                        <td>
+
+
+                            {
+
+                            doc.uploadDate
+
+                            ?
+
+                            new Date(
+                                doc.uploadDate
+                            )
+                            .toLocaleString()
+
+                            :
+
+                            "-"
+
+                            }
+
+
+                        </td>
+
+
+
+
+
+                        <td>
+
+
+                            {
+
+                            doc.expired
+
+                            ?
+
+                            <span className="badge bg-danger">
+
+                                Expired
+
+                            </span>
+
+
+                            :
+
+
+                            <span className="badge bg-success">
+
+                                Active
+
+                            </span>
+
+                            }
+
+
+                        </td>
+
+
+
+
+
+
+
+                        <td>
+
+
+                            <button
+
+                            className="btn btn-danger btn-sm"
+
+                            onClick={()=>
+                                deleteDocument(
+                                doc.documentId)
+                            }
+
+                            >
+
+                                Delete
+
+                            </button>
+
+
+                        </td>
+
+
+
+
+                    </tr>
+
+
+                ))
+
+
+                }
+
+
+
+                </tbody>
+
+
+
+            </table>
+
+
+            }
+
+
+
+        </div>
+
+    );
+
+
+}
+
+
+export default ManagerDocuments;
